@@ -1,4 +1,13 @@
 <?php
+
+function sort_cart_by_price($cart)
+{
+  usort($cart, function ($first, $second) {
+    return $first['data']->get_price() < $second['data']->get_price();
+  });
+
+  return $cart;
+}
 function add_5perc_on_most_expensive_product($cart)
 {
 
@@ -10,51 +19,38 @@ function add_5perc_on_most_expensive_product($cart)
 
   $cart = WC()->cart;
 
-  $cart_products = $cart->get_cart();
-
-  usort($cart_products, function ($first, $second) {
-    return $first['data']->get_price() < $second['data']->get_price();
-  });
+  $cart_products = sort_cart_by_price($cart->get_cart());
 
   $most_expensive_product = $cart_products[0];
 
 
   $x = array_filter($cart->get_cart(), function ($el) {
-    return $el['unique_key'] == 'test';
+    return $el['unique_key'] == 'is_most_expensive';
   });
 
 
   $ids = [];
   foreach ($x as $key => $product) {
     if ($product['data']->get_price() < $most_expensive_product['data']->get_price()) {
-      array_push($ids, (object) ["id" => $product['product_id'], "key" => $product['key']]);
+      array_push($ids, (object) ["id" => $product['product_id'], "key" => $product['key'], 'quantity' => $product['quantity']]);
     }
   }
 
 
   foreach ($ids as $el) {
     $cart->remove_cart_item($el->key);
-    $cart->add_to_cart($el->id, 2);
+    $cart->add_to_cart($el->id, $el->quantity);
   }
-  $cart_products = $cart->get_cart();
 
-
-
-
-
-  usort($cart_products, function ($first, $second) {
-    return $first['data']->get_price() < $second['data']->get_price();
-  });
-
-
+  $cart_products = sort_cart_by_price($cart->get_cart());
 
   $price_modifier = 0.05;
   $price_modifier_html = '<span class="cart__discounted_product_title"> -' . strval($price_modifier * 100) . '%</span>';
 
-  $la_key = 0;
+  $unique_product_key = 0;
   foreach ($cart_products as $key => $product) {
     if ($product['quantity'] == 1) {
-      $la_key = $key;
+      $unique_product_key = $key;
       break;
     }
   }
@@ -62,10 +58,9 @@ function add_5perc_on_most_expensive_product($cart)
   foreach ($cart_products as $key => $product) {
 
     //sorted array, skip the most expensive product
-    if ($key == $la_key) {
+    if ($key == $unique_product_key) {
       continue;
     }
-    $product_reg_price = floatval($product['data']->get_regular_price());
     $product_price = floatval($product['data']->get_price());
     $discount = $product_price * $price_modifier;
 
@@ -88,7 +83,6 @@ function add_5perc_on_most_expensive_product($cart)
 
     # get the price of a single copy
     $most_expensive_product_details = $most_expensive_product['data'];
-    $reg_price = $most_expensive_product_details->get_regular_price();
     $price = $most_expensive_product_details->get_price();
     $single_reg_price = $price / $most_expensive_product_quantity;
 
@@ -106,8 +100,6 @@ add_action('woocommerce_before_calculate_totals', 'add_5perc_on_most_expensive_p
 
 function conditionally_split_product_individual_cart_items($cart_item_data, $product_id)
 {
-
-
   if (is_admin() && !defined('DOING_AJAX'))
     return;
 
@@ -119,13 +111,10 @@ function conditionally_split_product_individual_cart_items($cart_item_data, $pro
   // if cart is not empty
   if (!sizeof($cart_products) == 0) {
 
-    //sort by price
-    usort($cart_products, function ($first, $second) {
-      return $first['data']->get_price() < $second['data']->get_price();
-    });
+    $cart_products = sort_cart_by_price($cart_products);
 
     // product being added on cart does not exist in the cart until now
-    $la_product = false;
+    $unique_product = false;
 
     //find the most expensive product
     $most_expensive_product = $cart_products[0];
@@ -134,14 +123,14 @@ function conditionally_split_product_individual_cart_items($cart_item_data, $pro
 
       // if product exists in the cart, get the id
       if ($cart_product['product_id'] == $product_id) {
-        $la_product = $cart_product;
+        $unique_product = $cart_product;
+        break;
       }
     }
 
     //if our product exists in the cart and it has the most expensive price
-    if ($la_product and $most_expensive_product['data']->get_price() ==  $la_product['data']->get_price()) {
-      //save it with a new id
-      $unique_cart_item_key = 'test';
+    if ($unique_product and $most_expensive_product['data']->get_price() == $unique_product['data']->get_price()) {
+      $unique_cart_item_key = 'is_most_expensive'; //save it with a new id
       $cart_item_data['unique_key'] = $unique_cart_item_key;
     }
   }
@@ -151,21 +140,26 @@ function conditionally_split_product_individual_cart_items($cart_item_data, $pro
 
 add_filter('woocommerce_add_cart_item_data', 'conditionally_split_product_individual_cart_items', 10, 2);
 
-add_filter('woocommerce_quantity_input_args', 'jk_woocommerce_quantity_input_args', 10, 2); // Simple products
+add_filter('woocommerce_quantity_input_args', 'woo_limit_product_quantity', 10, 2); // Simple products
 
-function jk_woocommerce_quantity_input_args($args, $product)
+add_filter('woocommerce_quantity_input_args', 'woo_limit_product_quantity', 10, 2); // Simple products
+function woo_limit_product_quantity($args, $product)
 {
   if (is_singular('product')) {
-    $args['input_value']   = 2;  // Starting value (we only want to affect product pages, not cart)
+    $args['input_value'] = 2; // Starting value (we only want to affect product pages, not cart)
   }
 
-  $key = array_search('test', array_column($cart_products, 'unique_key'));
-  echo $key;
+  $cart = WC()->cart->get_cart();
 
-  if ($product and !strpos($product->get_name(), '-5%')) {
-    echo var_dump($product->get_attributes());
-    $args['max_value']   = 1;   // Maximum value
-    $args['step']     = 1;    // Quantity steps
+  $more_instances = array_filter($cart, function ($el) use (&$product) {
+    return $el['product_id'] == $product->get_id();
+  });
+
+  $most_expensive = sort_cart_by_price($cart)[0];
+
+  if (sizeof($more_instances) > 1 && $most_expensive['data']->get_price() <= $product->get_price()) {
+    $args['max_value'] = 1; // Maximum value
+    $args['step'] = 1; // Quantity steps
   }
   return $args;
 }
