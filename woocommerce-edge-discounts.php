@@ -4,7 +4,7 @@
 function sort_cart_by_price($cart)
 {
   usort($cart, function ($first, $second) {
-    return $first['data']->get_price() < $second['data']->get_price();
+    return $first['data']->get_price() < $second['data']->get_price() or $second['unique_key'];
   });
 
   return $cart;
@@ -20,28 +20,12 @@ function add_5perc_on_most_expensive_product($cart)
     return;
 
   $cart = WC()->cart;
+  limit_cart_item_quantity($cart);
 
   $cart_products = sort_cart_by_price($cart->get_cart());
 
-
-  $most_expensive_product = $cart_products[0];
-
-
-  $x = array_filter($cart->get_cart(), function ($el) {
-    return $el['unique_key'] == 'is_most_expensive';
-  });
-
-
   $price_modifier = 0.05;
   $price_modifier_html = '<span class="cart__discounted_product_title"> -' . strval($price_modifier * 100) . '%</span>';
-
-  $la_key = 0;
-  foreach ($cart_products as $key => $product) {
-    if ($product['quantity'] == 1) {
-      $la_key = $key;
-      break;
-    }
-  }
 
   // discount for each product in cart
   foreach ($cart_products as $key => $product) {
@@ -53,8 +37,6 @@ function add_5perc_on_most_expensive_product($cart)
     $product_price = floatval($product['data']->get_price());
     $discount = $product_price * $price_modifier;
 
-
-
     $new_price = $product_price - $discount;
     $product['data']->set_price($new_price);
 
@@ -62,8 +44,6 @@ function add_5perc_on_most_expensive_product($cart)
     $product_name = $product['data']->get_name();
     $product['data']->set_name($product_name . $price_modifier_html);
   }
-  $most_expensive_product = $cart_products[0];
-  $most_expensive_product_quantity = $cart_products[0]['quantity'];
 }
 
 add_action('woocommerce_before_calculate_totals', 'add_5perc_on_most_expensive_product', 10, 1);
@@ -89,28 +69,19 @@ function woo_limit_product_quantity($args, $product)
 
 
 
-add_action('woocommerce_cart_updated', 'limit_cart_item_quantity', 10);
-function limit_cart_item_quantity()
+//add_action('woocommerce_cart_updated', 'limit_cart_item_quantity', 10);
+function limit_cart_item_quantity($cart)
 {
-
-  if (is_admin() && !defined('DOING_AJAX'))
-    return;
-
-  if (did_action('woocommerce_cart_updated') >= 2)
-    return;
-
-  $cart = WC()->cart;
 
   $cart_data = sort_cart_by_price($cart->cart_contents);
   $me = $cart_data[0];
   $me_q = $me['quantity'];
 
-
   $x = array_filter($cart->cart_contents, function ($el) {
     return $el['unique_key'] == 'is_most_expensive';
   });
 
-  if (sizeof($x) > 0) {
+  if (sizeof($x) > 1) {
     $ids = [];
     foreach ($x as $key => $product) {
       if ($product['data']->get_price() < $me['data']->get_price()) {
@@ -119,12 +90,17 @@ function limit_cart_item_quantity()
     }
 
     foreach ($ids as $el) {
+      //remove since it is considered as most expensive
       $cart->remove_cart_item($el->key);
-      $cart->add_to_cart($el->id, 2);
+      //add again
+      $cart->add_to_cart($el->id, $el->quantity);
     }
   }
   if ($me_q > 1) {
-    $cart->remove_cart_item($me['key']);
+    if ($ids)
+      foreach ($ids as $el) {
+        $cart->remove_cart_item($el->key);
+      } else  $cart->remove_cart_item($me['key']);
     $cart->add_to_cart($me['product_id'], 1, null, null, array('unique_key' => 'is_most_expensive'));
     $cart->add_to_cart($me['product_id'], $me_q - 1);
     WC()->cart->calculate_totals();
