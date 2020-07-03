@@ -97,10 +97,7 @@ function limit_cart_item_quantity($cart)
     }
   }
   if ($me_q > 1) {
-    if ($ids)
-      foreach ($ids as $el) {
-        $cart->remove_cart_item($el->key);
-      } else  $cart->remove_cart_item($me['key']);
+    $cart->remove_cart_item($me['key']);
     $cart->add_to_cart($me['product_id'], 1, null, null, array('unique_key' => 'is_most_expensive'));
     $cart->add_to_cart($me['product_id'], $me_q - 1);
     WC()->cart->calculate_totals();
