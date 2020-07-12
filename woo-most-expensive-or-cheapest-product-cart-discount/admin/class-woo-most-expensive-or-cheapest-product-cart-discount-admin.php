@@ -103,8 +103,15 @@ class Woo_Most_Expensive_Or_Cheapest_Product_Cart_Discount_Admin
 
 	public function add_plugin_admin_menu()
 	{
-
-		add_options_page('Woo most expensive or cheapest product cart discount', 'Woo most expensive/cheapest', 'admin', $this->plugin_name, array($this, 'display_plugin_setup_page'));
+		/*
+     * Add a settings page for this plugin to the Settings menu.
+     *
+     * NOTE:  Alternative menu locations are available via WordPress administration menu functions.
+     *
+     *        Administration Menus: http://codex.wordpress.org/Administration_Menus
+     *
+     */
+		add_options_page('Woo most expensive or cheapest product cart discount', 'Woo most expensive/cheapest', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page'));
 	}
 
 	public function add_action_links($links)
@@ -118,5 +125,34 @@ class Woo_Most_Expensive_Or_Cheapest_Product_Cart_Discount_Admin
 	public function display_plugin_setup_page()
 	{
 		include_once('partials/woo-most-expensive-or-cheapest-product-cart-discount-admin-display.php');
+	}
+
+	/**
+	 *
+	 * admin/class-woo-most-expensive-or-cheapest-product-cart-discount-admin.php
+	 *
+	 **/
+
+	public function options_update()
+	{
+		register_setting($this->plugin_name, $this->plugin_name, array($this, 'validate'));
+	}
+
+	/**
+	 *
+	 * admin/class-woo-most-expensive-or-cheapest-product-cart-discount-admin.php
+	 *
+	 **/
+
+	public function validate($input)
+	{
+		// All checkboxes inputs        
+		$valid = array();
+
+		$filteredDiscount = sanitize_text_field($input['discount']);
+
+		//discount
+		$valid['discount'] = (($filteredDiscount <= 100 && $filteredDiscount) > 0) ? $filteredDiscount : 0;
+		return $valid;
 	}
 }

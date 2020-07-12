@@ -69,18 +69,18 @@ function woo_limit_product_quantity($args, $product)
 
 
 
-//add_action('woocommerce_cart_updated', 'limit_cart_item_quantity', 10);
 function limit_cart_item_quantity($cart)
 {
-
   $cart_data = sort_cart_by_price($cart->cart_contents);
   $me = $cart_data[0];
   $me_q = $me['quantity'];
 
+  // find products tagged with is_most_expensive
   $x = array_filter($cart->cart_contents, function ($el) {
     return $el['unique_key'] == 'is_most_expensive';
   });
 
+  // if cart contains more than 1 product tagged with is_most_expensive, remove them
   if (sizeof($x) > 1) {
     $ids = [];
     foreach ($x as $key => $product) {
@@ -96,6 +96,7 @@ function limit_cart_item_quantity($cart)
       $cart->add_to_cart($el->id, $el->quantity);
     }
   }
+  // if most expensive product has quantity>1, split it
   if ($me_q > 1) {
     $cart->remove_cart_item($me['key']);
     $cart->add_to_cart($me['product_id'], 1, null, null, array('unique_key' => 'is_most_expensive'));
