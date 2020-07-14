@@ -118,7 +118,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
 		function woocommerce_loaded()
 		{
-			if (!empty($this->woo_mecd_options['discount'])) {
+			if (!empty($this->woo_mecd_options['discount']) && !empty($this->woo_mecd_options['edge'])) {
 				add_action('woocommerce_cart_updated', array($this, 'add_5perc_on_most_expensive_product'), 10, 0);
 			}
 		}
@@ -139,9 +139,12 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 				return;
 
 			$cart = WC()->cart;
-			limit_cart_item_quantity($cart);
+			$discount_type = $this->woo_mecd_options['edge'];
+			limit_cart_item_quantity($cart, $discount_type);
 
-			$cart_products = sort_cart_by_price($cart->get_cart());
+			$cart_products = sort_cart_by_price($cart->get_cart(), $discount_type);
+
+
 
 			$price_modifier = $this->woo_mecd_options['discount'] / 100;
 			$price_modifier_html = '<span class="cart__discounted_product_title"> -' . strval($price_modifier * 100) . '%</span>';
@@ -166,11 +169,14 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		}
 	}
 
-	function limit_cart_item_quantity($cart)
+
+
+	function limit_cart_item_quantity($cart, $discount_type)
 	{
-		$cart_data = sort_cart_by_price($cart->cart_contents);
+		$cart_data = sort_cart_by_price($cart->cart_contents, $discount_type);
 		$me = $cart_data[0];
 		$me_q = $me['quantity'];
+
 
 		// find products tagged with is_most_expensive
 		$x = array_filter($cart->cart_contents, function ($el) {
@@ -179,7 +185,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
 		foreach ($x as $key => $product) {
 			// if cart contains more than 1 products tagged with is_most_expensive, remove and re-insert them
-			if ($product['data']->get_price() < $me['data']->get_price()) {
+			if (edge_comparison($product['data']->get_price(), $me['data']->get_price(), $discount_type)) {
 				$cart->remove_cart_item($product['key']);
 				$cart->add_to_cart($product['product_id'], $product['quantity']);
 			}
@@ -194,12 +200,21 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		}
 	}
 
-	function sort_cart_by_price($cart)
+	function sort_cart_by_price($cart, $discount_type)
 	{
-		usort($cart, function ($first, $second) {
-			return $first['data']->get_price() < $second['data']->get_price() or $second['unique_key'];
+		usort($cart, function ($first, $second) use (&$discount_type) {
+			return edge_comparison($first['data']->get_price(), $second['data']->get_price(), $discount_type) or $second['unique_key'];
 		});
 
 		return $cart;
+	}
+	function edge_comparison($first, $second, $type)
+	{
+		if ($type == 'most expensive') {
+			return $first < $second;
+		}
+		if ($type == 'cheapest') {
+			return $first > $second;
+		}
 	}
 }

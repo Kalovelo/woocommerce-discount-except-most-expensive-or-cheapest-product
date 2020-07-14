@@ -148,11 +148,15 @@ class Woo_Most_Expensive_Or_Cheapest_Product_Cart_Discount_Admin
 	{
 		// All checkboxes inputs        
 		$valid = array();
+		
+		//type of discount
+		$valid['edge'] = $input['edge'];
 
 		$filteredDiscount = sanitize_text_field($input['discount']);
 
 		//discount
 		$valid['discount'] = (($filteredDiscount <= 100 && $filteredDiscount) > 0) ? $filteredDiscount : 0;
+		
 		return $valid;
 	}
 }

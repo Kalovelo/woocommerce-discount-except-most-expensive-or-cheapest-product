@@ -25,13 +25,17 @@
     //Grab all options
     $options = get_option($this->plugin_name);
     $discount = $options['discount'];
+    $edge = $options['edge'];
     // Discount
+    // 
     ?>
 
     <?php
     settings_fields($this->plugin_name);
     do_settings_sections($this->plugin_name);
     ?>
+	  
+	  
     <!-- remove some meta and generators from the <head> -->
     <fieldset>
       <legend class="screen-reader-text"><span>Clean WordPress head section</span></legend>
@@ -39,6 +43,13 @@
         <input type="number" value="<?php echo $discount ?>" name="<?php echo $this->plugin_name; ?>[discount]" id="<?php echo $this->plugin_name; ?>-discount" class="regular-text" min='1' max='100' />
         <span class="description"><?php esc_attr_e('Percentage discount for the most expensive product', 'WpAdminStyle'); ?></span><br>
       </label>
+    </fieldset>
+		
+	<fieldset>
+       	<input type="radio" value="most expensive" name="<?php echo $this->plugin_name; ?>[edge]" id="<?php echo $this->plugin_name; ?>-edge--me"  <?php if ($edge == 'most expensive') echo 'checked'?>>
+		<label for="<?php echo $this->plugin_name; ?>-edge--me">Discount for most expensive product in cart</label><br/>
+		<input type="radio"value="cheapest" name="<?php echo $this->plugin_name; ?>[edge]" id="<?php echo $this->plugin_name; ?>-edge--ch" <?php if ($edge == 'cheapest') echo 'checked'?>>
+		<label for="<?php echo $this->plugin_name; ?>-edge--ch">Discount for cheapest product in cart</label>
     </fieldset>
 
     <?php submit_button('Save all changes', 'primary', 'submit', TRUE); ?>
