@@ -119,7 +119,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		function woocommerce_loaded()
 		{
 			if (!empty($this->woo_mecd_options['discount'])) {
-				add_action('woocommerce_before_calculate_totals', array($this, 'add_5perc_on_most_expensive_product'), 10, 1);
+				add_action('woocommerce_cart_updated', array($this, 'add_5perc_on_most_expensive_product'), 10, 1);
 			}
 		}
 
@@ -194,13 +194,12 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		}
 	}
 
-			function sort_cart_by_price($cart)
-		{
-			usort($cart, function ($first, $second) {
-				return $first['data']->get_price() < $second['data']->get_price() or $second['unique_key'];
-			});
+	function sort_cart_by_price($cart)
+	{
+		usort($cart, function ($first, $second) {
+			return $first['data']->get_price() < $second['data']->get_price() or $second['unique_key'];
+		});
 
-			return $cart;
-		}
-
+		return $cart;
+	}
 }
