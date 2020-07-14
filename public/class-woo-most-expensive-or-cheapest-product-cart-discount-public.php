@@ -119,7 +119,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		function woocommerce_loaded()
 		{
 			if (!empty($this->woo_mecd_options['discount'])) {
-				add_action('woocommerce_cart_updated', array($this, 'add_5perc_on_most_expensive_product'), 10, 1);
+				add_action('woocommerce_cart_updated', array($this, 'add_5perc_on_most_expensive_product'), 10, 0);
 			}
 		}
 
@@ -130,12 +130,12 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		 */
 		// Add custom Theme Functions here
 
-		public function add_5perc_on_most_expensive_product($cart)
+		public function add_5perc_on_most_expensive_product()
 		{
 			if (is_admin() && !defined('DOING_AJAX'))
 				return;
 
-			if (did_action('woocommerce_before_calculate_totals') >= 2)
+			if (did_action('woocommerce_before_calculate_totals') >= 1)
 				return;
 
 			$cart = WC()->cart;
