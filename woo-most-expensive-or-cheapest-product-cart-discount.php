@@ -13,9 +13,9 @@
  * @package           Woo_Most_Expensive_Or_Cheapest_Product_Cart_Discount
  *
  * @wordpress-plugin
- * Plugin Name:       Woo most expensive or cheapest product cart discount
+ * Plugin Name:       Woo cart discount except most expensive or cheapest product
  * Plugin URI:        https://github.com/Kalovelo/woocommerce-edge-discounts
- * Description:       This is a short description of what the plugin does. It's displayed in the WordPress admin area.
+ * Description:       Woo cart discount except most expensive or cheapest product 
  * Version:           1.0.0
  * Author:            Kalovelo
  * Author URI:        https://kalovelo.com

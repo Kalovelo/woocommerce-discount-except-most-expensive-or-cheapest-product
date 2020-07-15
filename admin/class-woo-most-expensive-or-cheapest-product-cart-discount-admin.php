@@ -111,7 +111,7 @@ class Woo_Most_Expensive_Or_Cheapest_Product_Cart_Discount_Admin
      *        Administration Menus: http://codex.wordpress.org/Administration_Menus
      *
      */
-		add_options_page('Woo most expensive or cheapest product cart discount', 'Woo most expensive/cheapest', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page'));
+		add_options_page('Woo discount except edge product cart', 'Woo most expensive/cheapest', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page'));
 	}
 
 	public function add_action_links($links)
