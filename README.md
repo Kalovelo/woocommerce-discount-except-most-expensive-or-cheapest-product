@@ -7,5 +7,6 @@ It also updates the product's title with a **-[discount]** tag.
 
 ## Installation ⚙️
 
-1. Upload `woo-most-expensive-or-cheapest-product-cart-discount.php` to the `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
+1. Download as zip
+2. Upload it
+3. Activate the plugin through the 'Plugins' menu in WordPress
